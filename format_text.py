@@ -2,6 +2,7 @@ import nltk
 import os
 from bs4 import BeautifulSoup
 import re
+from datetime import datetime
 
 # Download necessary NLTK data (run once)
 try:
@@ -30,48 +31,37 @@ def segment_and_format_text(text):
     # Join sentences with proper spacing
     return '\n'.join(formatted_sentences)
 
-def extract_article_content(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Remove unwanted elements
-    for unwanted in soup.find_all(['script', 'style', 'nav', 'header', 'footer', 'aside']):
-        unwanted.decompose()
-    
-    # Find the main article content
-    content_div = soup.find('div', class_='content-offset')
-    if content_div:
-        # Extract text from all relevant elements
-        text_elements = content_div.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-        article_text = ' '.join(element.get_text().strip() for element in text_elements)
-        return article_text
-    return ''
+# Define base directories
+articles_texts_base_dir = 'article_texts'
+formatted_articles_base_dir = 'formatted_articles'
 
-# Process all downloaded articles
-articles_dir = 'articles'
-formatted_dir = 'formatted_articles'
+# Get today's date to locate and save in the correct folder
+current_date = datetime.now().strftime("%Y-%m-%d")
+articles_texts_dir = os.path.join(articles_texts_base_dir, current_date)
+formatted_articles_dir = os.path.join(formatted_articles_base_dir, current_date)
 
-# Create formatted directory if it doesn't exist
-if not os.path.exists(formatted_dir):
-    os.makedirs(formatted_dir)
+# Create directory for formatted articles if it doesn't exist
+if not os.path.exists(formatted_articles_dir):
+    os.makedirs(formatted_articles_dir)
 
-# Process each HTML file
-for filename in os.listdir(articles_dir):
-    if filename.endswith('.html'):
+# Process each text file in the articles_texts directory
+for filename in os.listdir(articles_texts_dir):
+    if filename.endswith('.txt'):
         print(f"Processing {filename}")
         
-        # Read HTML file
-        with open(os.path.join(articles_dir, filename), 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        
-        # Extract content
-        article_text = extract_article_content(html_content)
+        # Read article text file
+        text_path = os.path.join(articles_texts_dir, filename)
+        with open(text_path, 'r', encoding='utf-8') as f:
+            article_text = f.read()
         
         # Segment and format text
         formatted_text = segment_and_format_text(article_text)
         
-        # Save formatted text
-        formatted_filename = filename.replace('.html', '_formatted.txt')
-        with open(os.path.join(formatted_dir, formatted_filename), 'w', encoding='utf-8') as f:
+        # Save the formatted text to the formatted_articles directory
+        formatted_filename = filename.replace('.txt', '_formatted.txt')
+        formatted_text_path = os.path.join(formatted_articles_dir, formatted_filename)
+        
+        with open(formatted_text_path, 'w', encoding='utf-8') as f:
             f.write(formatted_text)
 
-print("Text formatting complete!")
+print(f"Text formatting complete! Files saved in: {formatted_articles_dir}")
