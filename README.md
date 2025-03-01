@@ -5,10 +5,10 @@ A Python-based web scraping project for extracting and processing articles from 
 ## Project Structure
 
 The project consists of four main scripts:
-- `wayback_fetcher.py`: Creates a list of links that extractable
 - `articleDownloader.py`: Downloads article HTML from the given list
 - `textExtracter.py`: Extracts clean text content from HTML files
 - `format_text.py`: Formats and segments the extracted text
+- `wayback_fetcher.py`: (Debugging tool) Used to check the availability of Wayback Machine snapshots without downloading them
 
 ## Setup
 
@@ -28,13 +28,6 @@ pip install -r requirements.txt
 ```
 
 ## Component Details
-
-### Wayback Machine Fetcher
-`wayback_fetcher.py` Queries the wayback machine for availible snapshots
-- Uses the `CDX API` to fetch available snapshots within a date range
-- Filters only snapshots with a 200 OK status
-- Constructs a list of URLs to download
-- Saves the snapshot metadata for reference
 
 ### Article Downloader
 `articleDownloader.py` Downloads the archived HTML from the wayback machine
@@ -63,6 +56,12 @@ pip install -r requirements.txt
 - Formats text with one sentence per line
 - Preserves proper spacing and formatting
 
+### Wayback Machine Fetcher
+`wayback_fetcher.py` Queries the wayback machine for availible snapshots
+- Queries Wayback Machine for archived URLs.
+- Lists found snapshots and their HTTP status codes.
+- Does NOT download any files (for debugging purposes only).
+
 ## Usage
 
 1. Set up the virtual environment and install requirements
@@ -76,20 +75,22 @@ python format_text.py        # Formats the extracted text
 
 ## Output Structure
 ```
-project/
-├── downloaded_html/         # Raw HTML files from Wayback Machine
+NLP-Article-Extractor/
+├── downloaded_html/    # Raw HTML files from Wayback Machine
 │   └── YYYY-MM-DD/
-│       └── article_[TIMESTAMP].html
-├── articles/                # Extracted text content
+│       └── article_timestamp.html
+├── articles/           # Extracted clean text from HTML
 │   └── YYYY-MM-DD/
-│       └── article_[TIMESTAMP].txt
-├── article_texts/           # Processed & formatted text
+│       └── article_timestamp.txt
+├── article_texts/      # Fully formatted and segmented text
 │   └── YYYY-MM-DD/
-│       └── article_[TIMESTAMP]_formatted.txt
+│       └── article_timestamp_formatted.txt
+└── scripts/            # Python scripts for each processing step
 ```
 
 ## Features and Enhancements
 - Wayback Machine Support: Fetches and downloads archived versions of articles.
+- Filters only HTTP 200 snapshots to avoid broken downloads.
 - Error Handling: Implements retry logic for failed downloads.
 - Batch Processing: Organizes files by date for efficient storage and access.
 - Persian/Arabic Text Processing: Ensures proper text extraction and formatting.
