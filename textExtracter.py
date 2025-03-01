@@ -66,6 +66,6 @@ if os.path.exists(html_dir):
             with open(text_path, 'w', encoding='utf-8') as f:
                 f.write(article_text)
     
-    print(f"✅ Text extraction complete! Files saved in: {text_dir}")
+    print(f"Text extraction complete! Files saved in: {text_dir}")
 else:
-    print(f"⚠️ No HTML files found in {html_dir}. Check if the HTML files exist.")
+    print(f"No HTML files found in {html_dir}. Check if the HTML files exist.")
