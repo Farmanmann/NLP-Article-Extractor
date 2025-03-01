@@ -4,8 +4,9 @@ A Python-based web scraping project for extracting and processing articles from 
 
 ## Project Structure
 
-The project consists of three main scripts:
-- `articleDownloader.py`: Downloads article HTML from the website
+The project consists of four main scripts:
+- `wayback_fetcher.py`: Creates a list of links that extractable
+- `articleDownloader.py`: Downloads article HTML from the given list
 - `textExtracter.py`: Extracts clean text content from HTML files
 - `format_text.py`: Formats and segments the extracted text
 
@@ -26,30 +27,28 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Requirements
-Create a `requirements.txt` file with the following dependencies:
-```
-beautifulsoup4==4.12.3
-nltk==3.8.1
-requests==2.31.0
-```
-
 ## Component Details
 
+### Wayback Machine Fetcher
+`wayback_fetcher.py` Queries the wayback machine for availible snapshots
+- Uses the `CDX API` to fetch available snapshots within a date range
+- Filters only snapshots with a 200 OK status
+- Constructs a list of URLs to download
+- Saves the snapshot metadata for reference
+
 ### Article Downloader
-`articleDownloader.py` handles the initial web scraping:
-- Creates 'articles' directory if it doesn't exist
-- Collects unique article URLs from darivoa.com
-- Downloads HTML content for each article
-- Saves files with UTF-8 encoding for Persian text
-- Includes error handling and request delays
-- Shows download progress
-- Names files using article IDs
+`articleDownloader.py` Downloads the archived HTML from the wayback machine
+- Creates 'downloaded_html/date' directory to store raw HTML files
+- Iterates over snapshot URLs from wayback_fetcher.py
+- Downloads each HTML file, retrying up to 3 times if there are connection issues
+- Saves each file in UTF-8 encoding for Persian text
+- Logs successful and failed downloads
+- Implements timeouts and delays to prevent server overload
 
 ### Text Extractor
 `textExtracter.py` processes the downloaded HTML:
 - Creates 'article_texts' directory for cleaned content
-- Processes HTML files from 'articles' directory
+- Processes HTML files from 'downloaded_html/date' directory
 - Removes unwanted elements (scripts, styles, nav menus)
 - Extracts text from relevant HTML tags
 - Cleans whitespace and formatting
@@ -69,24 +68,34 @@ requests==2.31.0
 1. Set up the virtual environment and install requirements
 2. Run the scripts in sequence:
 ```bash
-python articleDownloader.py
-python textExtracter.py
-python format_text.py
+python wayback_fetcher.py    # Fetches available snapshots
+python articleDownloader.py  # Downloads HTML from wayback machine
+python textExtracter.py      # Extracts clean article text
+python format_text.py        # Formats the extracted text
 ```
 
 ## Output Structure
 ```
 project/
-├── articles/                 # Raw HTML files
-│   └── article_[ID].html
-├── article_texts/           # Extracted text content
-│   └── article_[ID].txt
-└── formatted_texts/         # Final formatted text
-    └── article_[ID]_formatted.txt
+├── downloaded_html/         # Raw HTML files from Wayback Machine
+│   └── YYYY-MM-DD/
+│       └── article_[TIMESTAMP].html
+├── articles/                # Extracted text content
+│   └── YYYY-MM-DD/
+│       └── article_[TIMESTAMP].txt
+├── article_texts/           # Processed & formatted text
+│   └── YYYY-MM-DD/
+│       └── article_[TIMESTAMP]_formatted.txt
 ```
 
+##Features and Enhancements
+- Wayback Machine Support: Fetches and downloads archived versions of articles.
+- Error Handling: Implements retry logic for failed downloads.
+- Batch Processing: Organizes files by date for efficient storage and access.
+- Persian/Arabic Text Processing: Ensures proper text extraction and formatting.
+
 ## Important Notes
-- The scripts include delays between requests to avoid overwhelming the server
-- All text is processed with UTF-8 encoding for proper Persian text handling
-- The NLTK library will download required data on first run
-- Make sure you have proper permissions to create directories and files
+- The scripts include delays between requests to avoid overwhelming the server.
+- All text is processed with UTF-8 encoding for proper Persian text handling.
+- The NLTK library will download required data on first run.
+- Ensure you have proper permissions to create directories and files.
