@@ -66,9 +66,10 @@ pip install -r requirements.txt
 
 1. Set up the virtual environment and install requirements
 2. Run the scripts in sequence:
+
 ```bash
-python wayback_fetcher.py    # Fetches available snapshots
 python articleDownloader.py  # Downloads HTML from wayback machine
+#You will be prompted to enter a start date and an end date (both in YYYYMMDD format). The script will fetch and download all available articles within that range.
 python textExtracter.py      # Extracts clean article text
 python format_text.py        # Formats the extracted text
 ```
@@ -89,6 +90,7 @@ NLP-Article-Extractor/
 ```
 
 ## Features and Enhancements
+- Data Validation: The program ensures that only past dates are accepted
 - Wayback Machine Support: Fetches and downloads archived versions of articles.
 - Filters only HTTP 200 snapshots to avoid broken downloads.
 - Error Handling: Implements retry logic for failed downloads.
