@@ -88,7 +88,7 @@ project/
 │       └── article_[TIMESTAMP]_formatted.txt
 ```
 
-##Features and Enhancements
+## Features and Enhancements
 - Wayback Machine Support: Fetches and downloads archived versions of articles.
 - Error Handling: Implements retry logic for failed downloads.
 - Batch Processing: Organizes files by date for efficient storage and access.
