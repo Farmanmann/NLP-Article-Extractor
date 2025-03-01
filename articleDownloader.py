@@ -1,61 +1,92 @@
-from bs4 import BeautifulSoup
 import requests
-import os  # To make directories
-import time  # To avoid overloading the server
-from datetime import datetime  # To create date-specific folders
+import time
+import os
+from datetime import datetime
+# Base settings
+domain = "www.darivoa.com"
+from_ts = "20250210000000"
+to_ts   = "20250223000000"
 
-def getHTMLdocument(url):
-    """Fetch the HTML content of a given URL."""
-    response = requests.get(url)
-    response.raise_for_status()  # Raise an error for failed requests
-    return response.text
+# Create a directory for today's date
+today_date = datetime.today().strftime('%Y-%m-%d')
+output_dir = os.path.join("downloaded_html", today_date)
+os.makedirs(output_dir, exist_ok=True)
 
-# Base setup
-base_url = "https://www.darivoa.com/"
-html_document = getHTMLdocument(base_url)
+# Function to get CDX data from Wayback Machine
+def get_snapshots():
+    cdx_url = "https://web.archive.org/cdx/search/cdx"
+    params = {
+        'url': domain,
+        'from': from_ts,
+        'to': to_ts,
+        'output': 'json'
+    }
 
-if html_document:
-    # Get today's date for folder organization
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    base_dir = "articles"  # Base directory for articles
-    articles_dir = os.path.join(base_dir, current_date)
-    
-    # Ensure the date-specific directory exists
-    if not os.path.exists(articles_dir):
-        os.makedirs(articles_dir)
-    
-    # Parse the HTML
-    soup = BeautifulSoup(html_document, 'html.parser')
-    article_urls = set()
-
-    # Find all article links on the main page
-    for link in soup.find_all('a'):
-        href = link.get('href')
-        if href and '/a/' in href:  # Check if it's an article link
-            full_url = base_url.rstrip('/') + href if not href.startswith('http') else href
-            article_urls.add(full_url)
-
-    # Loop through and download each article
-    for i, url in enumerate(article_urls, 1):
-        print(f"Downloading article {i}/{len(article_urls)}: {url}")
+    try:
+        print("Querying Wayback Machine for snapshots...")
+        response = requests.get(cdx_url, params=params, timeout=30)
+        response.raise_for_status()
         
-        # Extract article ID from URL
-        article_id = url.split('/')[-1].replace('.html', '')
-        
-        # Download the article HTML
+        data = response.json()
+        if len(data) <= 1:
+            print("[WARN] No snapshots found!")
+            return []
+
+        # Extract snapshots with status code 200
+        snapshots = [
+            {"timestamp": row[1], "original_url": row[2]}
+            for row in data[1:]  # Skip header row
+            if row[4] == "200"  # Only keep status 200
+        ]
+
+        print(f"Found {len(snapshots)} snapshots with status 200.")
+        return snapshots
+
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Failed to retrieve snapshots: {e}")
+        return []
+
+# Function to download each snapshot
+def download_page(url, save_path, max_retries=3):
+    for attempt in range(1, max_retries + 1):
+        print(f"Downloading: {url} (Attempt {attempt})")
         try:
-            article_html = getHTMLdocument(url)
-            # Save the HTML to a file
-            filename = os.path.join(articles_dir, f'article_{article_id}.html')
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(article_html)
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
             
-            # Delay between requests
-            time.sleep(1)
-        except Exception as e:
-            print(f"Failed to download {url}: {e}")
+            # Save HTML to file
+            with open(save_path, 'w', encoding='utf-8') as f:
+                f.write(response.text)
 
-    print(f"Downloaded {len(article_urls)} Articles in total into folder: {articles_dir}")
-else:
-    print("Failed to retrieve the main page.")
+            print(f"Saved: {save_path}")
+            
+            # Wait 15 seconds before next request
+            time.sleep(15)
+            
+            return  # Success, exit function
 
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] {e}")
+            if attempt < max_retries:
+                wait_time = 5 * attempt  # Exponential backoff (5s, 10s, 15s)
+                print(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                print(f"Skipping {url} after {max_retries} failed attempts.")
+
+# Get snapshots from CDX query
+snapshots = get_snapshots()
+
+# Loop through and download snapshots
+for snapshot in snapshots:
+    timestamp = snapshot["timestamp"]
+    original_url = snapshot["original_url"]
+    
+    # Construct the Wayback Machine snapshot URL
+    snapshot_url = f"https://web.archive.org/web/{timestamp}if_/{original_url}"
+    
+    # Define file path
+    save_path = os.path.join(output_dir, f"{timestamp}.html")
+    
+    # Download the page
+    download_page(snapshot_url, save_path)

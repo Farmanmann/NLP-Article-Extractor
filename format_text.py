@@ -1,67 +1,69 @@
 import nltk
 import os
-from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 
-# Download necessary NLTK data (run once)
+# Ensure necessary NLTK tokenizer is available
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
 
 def clean_text(text):
-    # Remove extra whitespace
-    text = ' '.join(text.split())
-    # Remove special characters but keep Persian/Arabic characters and punctuation
-    text = re.sub(r'[^\u0600-\u06FF\s.,!?؟،]+', ' ', text)
+    """Remove extra whitespace and keep only Persian/Arabic characters and punctuation."""
+    text = ' '.join(text.split())  # Remove extra spaces
+    text = re.sub(r'[^\u0600-\u06FF\s.,!?؟،]+', ' ', text)  # Keep Persian/Arabic + punctuation
     return text.strip()
 
 def segment_and_format_text(text):
-    # Tokenize into sentences using NLTK
+    """Tokenizes text into sentences and cleans each one."""
     sentences = nltk.sent_tokenize(text)
-    
-    # Clean and format each sentence
-    formatted_sentences = []
-    for sentence in sentences:
-        cleaned = clean_text(sentence)
-        if cleaned:  # Only add non-empty sentences
-            formatted_sentences.append(cleaned)
-    
-    # Join sentences with proper spacing
+    formatted_sentences = [clean_text(sentence) for sentence in sentences if clean_text(sentence)]
     return '\n'.join(formatted_sentences)
 
-# Define base directories
-articles_texts_base_dir = 'article_texts'
-formatted_articles_base_dir = 'formatted_articles'
+# Base directories
+articles_base_dir = 'articles'        # Source: Raw extracted text
+formatted_base_dir = 'article_texts'  # Destination: Processed & formatted text
 
-# Get today's date to locate and save in the correct folder
+# Get today's date for correct directory usage
 current_date = datetime.now().strftime("%Y-%m-%d")
-articles_texts_dir = os.path.join(articles_texts_base_dir, current_date)
-formatted_articles_dir = os.path.join(formatted_articles_base_dir, current_date)
+articles_dir = os.path.join(articles_base_dir, current_date)
+formatted_dir = os.path.join(formatted_base_dir, current_date)
 
-# Create directory for formatted articles if it doesn't exist
-if not os.path.exists(formatted_articles_dir):
-    os.makedirs(formatted_articles_dir)
+# Ensure output directory exists
+os.makedirs(formatted_dir, exist_ok=True)
 
-# Process each text file in the articles_texts directory
-for filename in os.listdir(articles_texts_dir):
-    if filename.endswith('.txt'):
-        print(f"Processing {filename}")
-        
-        # Read article text file
-        text_path = os.path.join(articles_texts_dir, filename)
-        with open(text_path, 'r', encoding='utf-8') as f:
-            article_text = f.read()
-        
-        # Segment and format text
-        formatted_text = segment_and_format_text(article_text)
-        
-        # Save the formatted text to the formatted_articles directory
-        formatted_filename = filename.replace('.txt', '_formatted.txt')
-        formatted_text_path = os.path.join(formatted_articles_dir, formatted_filename)
-        
-        with open(formatted_text_path, 'w', encoding='utf-8') as f:
-            f.write(formatted_text)
+# Process each text file in today's articles directory
+if os.path.exists(articles_dir):
+    for filename in os.listdir(articles_dir):
+        if filename.endswith('.txt'):
+            print(f"📄 Processing {filename}...")
 
-print(f"Text formatting complete! Files saved in: {formatted_articles_dir}")
+            # Read original text
+            text_path = os.path.join(articles_dir, filename)
+            with open(text_path, 'r', encoding='utf-8') as f:
+                article_text = f.read().strip()
+            
+            # Skip empty files
+            if not article_text:
+                print(f"⚠️ Skipping {filename} (empty file).")
+                continue
+
+            # Process and format text
+            formatted_text = segment_and_format_text(article_text)
+            
+            # Skip saving empty formatted text
+            if not formatted_text:
+                print(f"⚠️ No meaningful text extracted from {filename}, skipping.")
+                continue
+            
+            # Save to formatted directory
+            formatted_filename = filename.replace('.txt', '_formatted.txt')
+            formatted_text_path = os.path.join(formatted_dir, formatted_filename)
+            
+            with open(formatted_text_path, 'w', encoding='utf-8') as f:
+                f.write(formatted_text)
+
+    print(f"✅ Text formatting complete! Files saved in: {formatted_dir}")
+else:
+    print(f"⚠️ No text files found in {articles_dir}. Check your extracted articles.")
