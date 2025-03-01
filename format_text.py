@@ -37,7 +37,7 @@ os.makedirs(formatted_dir, exist_ok=True)
 if os.path.exists(articles_dir):
     for filename in os.listdir(articles_dir):
         if filename.endswith('.txt'):
-            print(f"📄 Processing {filename}...")
+            print(f"Processing {filename}...")
 
             # Read original text
             text_path = os.path.join(articles_dir, filename)
@@ -46,7 +46,7 @@ if os.path.exists(articles_dir):
             
             # Skip empty files
             if not article_text:
-                print(f"⚠️ Skipping {filename} (empty file).")
+                print(f"Skipping {filename} (empty file).")
                 continue
 
             # Process and format text
@@ -54,7 +54,7 @@ if os.path.exists(articles_dir):
             
             # Skip saving empty formatted text
             if not formatted_text:
-                print(f"⚠️ No meaningful text extracted from {filename}, skipping.")
+                print(f"No meaningful text extracted from {filename}, skipping.")
                 continue
             
             # Save to formatted directory
@@ -64,6 +64,6 @@ if os.path.exists(articles_dir):
             with open(formatted_text_path, 'w', encoding='utf-8') as f:
                 f.write(formatted_text)
 
-    print(f"✅ Text formatting complete! Files saved in: {formatted_dir}")
+    print(f"Text formatting complete! Files saved in: {formatted_dir}")
 else:
-    print(f"⚠️ No text files found in {articles_dir}. Check your extracted articles.")
+    print(f"No text files found in {articles_dir}. Check your extracted articles.")
