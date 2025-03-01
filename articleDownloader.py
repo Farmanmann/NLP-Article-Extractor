@@ -4,9 +4,27 @@ import os
 from datetime import datetime
 # Base settings
 domain = "www.darivoa.com"
-from_ts = "20250210000000"
-to_ts   = "20250223000000"
 
+# Function to validate user input
+def get_valid_date(prompt):
+    while True:
+        user_input = input(prompt)
+        
+        # Ensure it's 8 digits and represents a valid date
+        try:
+            date_obj = datetime.strptime(user_input, "%Y%m%d")
+            
+            # Ensure the date is in the past
+            if date_obj >= datetime.today():
+                print("[ERROR] The date must be in the past.")
+            else:
+                return user_input + "000000"  # Append '000000' as required
+        except ValueError:
+            print("[ERROR] Invalid format. Please enter the date as YYYYMMDD.")
+
+# Get user input for from and to dates
+from_ts = get_valid_date("Enter the 'from' date (YYYYMMDD): ")
+to_ts = get_valid_date("Enter the 'to' date (YYYYMMDD): ")
 # Create a directory for today's date
 today_date = datetime.today().strftime('%Y-%m-%d')
 output_dir = os.path.join("downloaded_html", today_date)
